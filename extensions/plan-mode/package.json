@@ -1,0 +1,10 @@
+{
+  "name": "pi-extension-plan-mode",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Read-only exploration mode for safe code analysis and planning - Adds /plan command",
+  "pi": {
+    "extensions": ["./index.ts"]
+  }
+}

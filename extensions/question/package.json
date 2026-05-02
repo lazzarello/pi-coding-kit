@@ -1,0 +1,10 @@
+{
+  "name": "pi-extension-question",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Interactive question tool for Pi - Ask users questions with multiple choice or custom input",
+  "pi": {
+    "extensions": ["./index.ts"]
+  }
+}
