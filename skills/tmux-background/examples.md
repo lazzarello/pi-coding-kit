@@ -3,8 +3,8 @@
 ## Example 1: Running a long build in the background
 
 ```bash
-# Start the build
-tmux new-session -d -s mybuild 'npm run build'
+# Start the build (with ; read to keep session alive after completion)
+tmux new-session -d -s mybuild 'npm run build; read'
 
 # Verify it started
 tmux ls
@@ -13,17 +13,18 @@ tmux ls
 sleep 3
 tmux capture-pane -t mybuild -p -S -20
 
-# When done, clean up
+# Even if build finishes, session stays alive and output is preserved
+# When done reviewing output, clean up
 tmux kill-session -t mybuild
 ```
 
 ## Example 2: Multiple concurrent test suites
 
 ```bash
-# Start all test suites
-tmux new-session -d -s unit-tests 'npm run test:unit'
-tmux new-session -d -s integration-tests 'npm run test:integration'
-tmux new-session -d -s e2e-tests 'npm run test:e2e'
+# Start all test suites (with ; read to preserve output)
+tmux new-session -d -s unit-tests 'npm run test:unit; read'
+tmux new-session -d -s integration-tests 'npm run test:integration; read'
+tmux new-session -d -s e2e-tests 'npm run test:e2e; read'
 
 # Check all sessions
 tmux ls
@@ -42,7 +43,7 @@ tmux kill-session -t e2e-tests
 ## Example 3: Development server with monitoring
 
 ```bash
-# Start dev server
+# Start dev server (no ; read needed - server runs indefinitely)
 tmux new-session -d -s dev-server 'npm run dev -- --port 3000'
 
 # Wait for it to start
@@ -63,7 +64,7 @@ tmux kill-session -t dev-server
 ## Example 4: Watch mode for continuous testing
 
 ```bash
-# Start test watcher
+# Start test watcher (no ; read needed - watch mode runs continuously)
 tmux new-session -d -s test-watch 'npm run test -- --watch'
 
 # Check initial output

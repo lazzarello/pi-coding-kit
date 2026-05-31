@@ -22,12 +22,16 @@ Load this skill when the user needs to:
 ### 1. Create a named tmux session
 
 ```bash
-tmux new-session -d -s SESSION_NAME 'COMMAND'
+tmux new-session -d -s SESSION_NAME 'COMMAND; read'
 ```
 
 - Use descriptive session names: `build`, `test-suite`, `dev-server`, `watch`, etc.
 - Single quotes around the command prevent premature shell expansion
 - The `-d` flag detaches immediately (runs in background)
+- **Always append `; read`** to keep the session alive after command completion
+  - Without this, sessions terminate immediately when the command finishes
+  - This prevents "can't find session" errors and preserves output history
+  - The `read` command waits for input, keeping the pane open until explicitly killed
 
 ### 2. Check running sessions
 
@@ -74,8 +78,8 @@ tmux kill-session -t SESSION_NAME
 
 ### Simple background task
 ```bash
-# Start
-tmux new-session -d -s build 'npm run build'
+# Start (note the ; read to keep session alive)
+tmux new-session -d -s build 'npm run build; read'
 
 # Check status
 tmux capture-pane -t build -p -S -20
@@ -86,7 +90,7 @@ tmux kill-session -t build
 
 ### Long-running server
 ```bash
-# Start dev server
+# Start dev server (long-running, won't exit on its own)
 tmux new-session -d -s dev-server 'npm run dev'
 
 # Check if it's running
@@ -96,12 +100,14 @@ tmux capture-pane -t dev-server -p -S -10
 tmux kill-session -t dev-server
 ```
 
+**Note:** For truly long-running processes (servers, watch modes) that don't exit on their own, you can omit `; read`. Use it for tasks that complete and whose output you want to preserve.
+
 ### Multiple concurrent tasks
 ```bash
-# Start multiple builds
-tmux new-session -d -s frontend 'cd frontend && npm run build'
-tmux new-session -d -s backend 'cd backend && cargo build --release'
-tmux new-session -d -s docs 'cd docs && hugo'
+# Start multiple builds (with ; read to preserve output)
+tmux new-session -d -s frontend 'cd frontend && npm run build; read'
+tmux new-session -d -s backend 'cd backend && cargo build --release; read'
+tmux new-session -d -s docs 'cd docs && hugo; read'
 
 # Check all
 tmux ls
@@ -114,14 +120,16 @@ tmux capture-pane -t docs -p -S -10
 
 ### Run command, wait a bit, then check
 ```bash
-# Start the task
-tmux new-session -d -s tests 'pytest tests/ -v'
+# Start the task (with ; read to keep session alive after completion)
+tmux new-session -d -s tests 'pytest tests/ -v; read'
 
 # Wait for it to make progress
 sleep 5
 
 # Check output
 tmux capture-pane -t tests -p -S -30
+
+# Even if tests finish quickly, session stays alive and output is preserved
 ```
 
 ## Error handling
@@ -130,10 +138,15 @@ tmux capture-pane -t tests -p -S -30
   - Kill the existing session first: `tmux kill-session -t SESSION_NAME`
   - Choose a different session name
   
+- **If `tmux capture-pane` fails with "can't find session":**
+  - The command finished and the session auto-terminated (forgot `; read`)
+  - Always append `; read` to commands that complete to preserve output
+  - Once the session is gone, the output history is lost
+
 - If `tmux capture-pane` shows no output, the command may have:
-  - Completed very quickly
-  - Failed immediately (check exit status)
   - Not produced any output yet (wait and check again)
+  - Failed to start (check for errors in the first few lines)
+  - Written output that has scrolled away (increase `-S` value)
 
 - Check if a session is still running:
   ```bash
@@ -142,13 +155,28 @@ tmux capture-pane -t tests -p -S -30
 
 ## Best practices
 
-1. **Use descriptive session names** that indicate the task purpose
-2. **Clean up sessions** when tasks complete—don't leave zombie sessions
-3. **Check status periodically** for long-running tasks
-4. **Capture sufficient output** (use `-S` flag to get more history)
-5. **Don't attach interactively** from the agent—it blocks the workflow
-6. **Verify the session started** with `tmux ls` immediately after creation
-7. **Quote commands properly** to handle spaces and special characters
+1. **Always append `; read`** to commands that complete (builds, tests, scripts) to preserve output
+2. **Use descriptive session names** that indicate the task purpose
+3. **Clean up sessions** when tasks complete—don't leave zombie sessions
+4. **Check status periodically** for long-running tasks
+5. **Capture sufficient output** (use `-S` flag to get more history)
+6. **Don't attach interactively** from the agent—it blocks the workflow
+7. **Verify the session started** with `tmux ls` immediately after creation
+8. **Quote commands properly** to handle spaces and special characters
+
+### When to use `; read`
+
+✅ **Use `; read` for:**
+- Build commands (npm, cargo, make, etc.)
+- Test suites that complete
+- One-shot scripts or data processing
+- Any command that finishes and whose output you need
+
+❌ **Skip `; read` for:**
+- Web servers or dev servers (they don't exit)
+- Watch modes (continuous running)
+- Daemons or background services
+- Any process that runs indefinitely
 
 ## Alternatives
 

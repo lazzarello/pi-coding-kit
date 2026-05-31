@@ -26,8 +26,8 @@ This skill provides instructions and patterns for running background processes w
 ## Quick Reference
 
 ```bash
-# Start background task
-tmux new-session -d -s task-name 'command'
+# Start background task (append ; read to preserve output after completion)
+tmux new-session -d -s task-name 'command; read'
 
 # Check status
 tmux capture-pane -t task-name -p -S -20
@@ -35,6 +35,12 @@ tmux capture-pane -t task-name -p -S -20
 # Clean up
 tmux kill-session -t task-name
 ```
+
+### Critical: Use `; read` for completing commands
+
+Always append `; read` to commands that finish (builds, tests, scripts). This keeps the session alive after completion and preserves output. Without it, the session terminates immediately and you'll get "can't find session" errors.
+
+Skip `; read` only for processes that run indefinitely (servers, watch modes).
 
 ## Integration
 
